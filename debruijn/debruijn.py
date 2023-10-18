@@ -84,7 +84,11 @@ def read_fastq(fastq_file: Path) -> Iterator[str]:
     :param fastq_file: (Path) Path to the fastq file.
     :return: A generator object that iterate the read sequences. 
     """
-    pass
+    with open(fastq_file, 'r') as fastq:
+        for line in fastq:
+            yield(next(fastq).strip())
+            next(fastq)
+            next(fastq)
 
 
 def cut_kmer(read: str, kmer_size: int) -> Iterator[str]:
@@ -93,7 +97,9 @@ def cut_kmer(read: str, kmer_size: int) -> Iterator[str]:
     :param read: (str) Sequence of a read.
     :return: A generator object that provides the kmers (str) of size kmer_size.
     """
-    pass
+    for i in range(len(read) - kmer_size + 1):
+        yield read[i:i + kmer_size]
+
 
 
 def build_kmer_dict(fastq_file: Path, kmer_size:int) -> Dict[str, int]:
@@ -102,7 +108,14 @@ def build_kmer_dict(fastq_file: Path, kmer_size:int) -> Dict[str, int]:
     :param fastq_file: (str) Path to the fastq file.
     :return: A dictionnary object that identify all kmer occurrences.
     """
-    pass
+    dico = {}
+    for r in read_fastq(fastq_file):
+        for kmer in cut_kmer(r, kmer_size):
+            dico[kmer] = dico.get(kmer, 0) +1
+    return dico
+	
+	
+	
 
 
 def build_graph(kmer_dict: Dict[str, int]) -> DiGraph:
@@ -210,7 +223,7 @@ def get_sink_nodes(graph: DiGraph) -> List[str]:
     pass
 
 
-def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[str]) -> List:
+def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[str]) -> List[List[str, int]]:
     """Extract the contigs from the graph
 
     :param graph: (nx.DiGraph) A directed graph object 
@@ -262,7 +275,10 @@ def main() -> None: # pragma: no cover
     """
     # Get arguments
     args = get_arguments()
-
+    file = "../data/eva71_two_reads.fq"
+    size_kmer = 4
+    test_dico = build_kmer_dict(file, size_kmer)
+    print(test_dico)
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit 
     # graphe
