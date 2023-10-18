@@ -17,6 +17,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+import networkx as nx
 from networkx import DiGraph, all_simple_paths, lowest_common_ancestor, has_path, random_layout, draw, spring_layout
 import matplotlib
 from operator import itemgetter
@@ -124,7 +125,18 @@ def build_graph(kmer_dict: Dict[str, int]) -> DiGraph:
     :param kmer_dict: A dictionnary object that identify all kmer occurrences.
     :return: A directed graph (nx) of all kmer substring and weight (occurrence).
     """
-    pass
+    debruijn_graph = nx.DiGraph()
+
+    for kmer, occurrence in kmer_dict.items():
+        prefix = kmer[:-1]
+        suffix = kmer[1:]
+
+        debruijn_graph.add_node(prefix)
+        debruijn_graph.add_node(suffix)
+
+        debruijn_graph.add_edge(prefix, suffix, weight=occurrence)
+
+    return debruijn_graph
 
 
 def remove_paths(graph: DiGraph, path_list: List[List[str]], delete_entry_node: bool, delete_sink_node: bool) -> DiGraph:
@@ -223,7 +235,7 @@ def get_sink_nodes(graph: DiGraph) -> List[str]:
     pass
 
 
-def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[str]) -> List[List[str, int]]:
+def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[str]):
     """Extract the contigs from the graph
 
     :param graph: (nx.DiGraph) A directed graph object 
@@ -279,6 +291,8 @@ def main() -> None: # pragma: no cover
     size_kmer = 4
     test_dico = build_kmer_dict(file, size_kmer)
     print(test_dico)
+    graphe = build_graph(test_dico)
+    graphe
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit 
     # graphe
