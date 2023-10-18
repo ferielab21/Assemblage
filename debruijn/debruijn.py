@@ -135,7 +135,8 @@ def build_graph(kmer_dict: Dict[str, int]) -> DiGraph:
         debruijn_graph.add_node(suffix)
 
         debruijn_graph.add_edge(prefix, suffix, weight=occurrence)
-
+    print(prefix)
+    print(suffix)
     return debruijn_graph
 
 
@@ -223,7 +224,9 @@ def get_starting_nodes(graph: DiGraph) -> List[str]:
     :param graph: (nx.DiGraph) A directed graph object
     :return: (list) A list of all nodes without predecessors
     """
-    pass
+    starting_nodes = [node for node in graph.nodes if not list(graph.predecessors(node))]
+    
+    return starting_nodes
 
 
 def get_sink_nodes(graph: DiGraph) -> List[str]:
@@ -232,7 +235,8 @@ def get_sink_nodes(graph: DiGraph) -> List[str]:
     :param graph: (nx.DiGraph) A directed graph object
     :return: (list) A list of all nodes without successors
     """
-    pass
+    sink_nodes = [node for node in graph.nodes if not list(graph.successors(node))]
+    return sink_nodes
 
 
 def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[str]):
@@ -243,7 +247,23 @@ def get_contigs(graph: DiGraph, starting_nodes: List[str], ending_nodes: List[st
     :param ending_nodes: (list) A list of nodes without successors
     :return: (list) List of [contiguous sequence and their length]
     """
-    pass
+    contigs = []
+
+    for start_node in starting_nodes:
+        for end_node in ending_nodes:
+            if nx.has_path(graph, start_node, end_node):
+                # Find all simple paths between the starting and ending nodes.
+                paths = nx.all_simple_paths(graph, source=start_node, target=end_node)
+
+                for path in paths:
+                    # Combine nodes in the path to form a contiguous sequence.
+                    contig_sequence = path[0]
+                    for i in range(1, len(path)):
+                        contig_sequence += path[i][-1]  # Append the last character of the node.
+
+                    contigs.append((contig_sequence, len(contig_sequence)))
+
+    return contigs
 
 
 def save_contigs(contigs_list: List[str], output_file: Path) -> None:
@@ -252,7 +272,15 @@ def save_contigs(contigs_list: List[str], output_file: Path) -> None:
     :param contig_list: (list) List of [contiguous sequence and their length]
     :param output_file: (Path) Path to the output file
     """
-    pass
+    with open(output_file, 'w') as f:
+        for i, (contig, length) in enumerate(contigs_list):
+            # Write the header in FASTA format.
+            header = f">contig_{i} len={length}\n"
+            f.write(header)
+
+            # Wrap the sequence to 80 characters per line and write it.
+            wrapped_sequence = textwrap.fill(contig, width=80)
+            f.write(wrapped_sequence + "\n")
 
 
 def draw_graph(graph: DiGraph, graphimg_file: Path) -> None: # pragma: no cover
@@ -288,11 +316,16 @@ def main() -> None: # pragma: no cover
     # Get arguments
     args = get_arguments()
     file = "../data/eva71_two_reads.fq"
-    size_kmer = 4
+    size_kmer = 22
     test_dico = build_kmer_dict(file, size_kmer)
     print(test_dico)
     graphe = build_graph(test_dico)
-    graphe
+    st_nodes = get_starting_nodes(graphe)
+    print(f"noeuds dentree : {st_nodes}")
+    sk_nodes = get_sink_nodes(graphe)
+    print(f"noeuds de sortie : {sk_nodes}")
+    contig = get_contigs(graphe, st_nodes, sk_nodes)
+    save_contigs(contig, "test_contig.fq")
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit 
     # graphe
